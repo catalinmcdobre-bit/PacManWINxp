@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Windows XP Professional</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #4fa5ff 0%, #a2d2ff 40%, #52af32 50%, #2f8c14 100%);
+            font-family: 'Tahoma', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+            position: relative;
+        }
+
+        /* ICONS POSITIONING */
+        .desktop-icons {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 2;
+        }
+
+        .shortcut {
+            width: 80px;
+            text-align: center;
+            cursor: pointer;
+            padding: 8px 5px;
+            border: 1px solid transparent;
+        }
+        .shortcut:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 3px;
+        }
+
+        .icon-shape {
+            width: 35px;
+            height: 35px;
+            margin: 0 auto 5px auto;
+            position: relative;
+        }
+        
+        /* DESIGN SHORTCUTS */
+        .pac-icon { background: #ffff00; border-radius: 50%; }
+        .pac-icon::after {
+            content: ''; position: absolute; top: 0; right: 0;
+            border-top: 17px solid transparent; border-bottom: 17px solid transparent;
+            border-right: 17px solid #6cb6ff;
+        }
+        
+        .computer-icon { 
+            background: #2b7ae6; 
+            border: 2px solid #fff; 
+            border-radius: 4px;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        .computer-icon::after {
+            content: ''; position: absolute; bottom: -5px; left: 7px;
+            width: 17px; height: 3px; background: #8c8c8c;
+        }
+
+        .bin-icon { 
+            background: #b3b3b3; 
+            border: 2px solid #fff; 
+            border-radius: 2px;
+            border-top: 4px solid #777;
+        }
+
+        .shortcut-label {
+            color: white;
+            font-size: 11px;
+            text-shadow: 1px 1px 2px black;
+            font-weight: bold;
+        }
+
+        /* JOCUL PACMAN */
+        .xp-window {
+            position: absolute;
+            top: 15%; left: 30%;
+            width: 420px;
+            background: #ece9d8;
+            border: 3px solid #0054e3;
+            border-top-left-radius: 7px; border-top-right-radius: 7px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 10;
+        }
+        .xp-title-bar {
+            background: linear-gradient(to bottom, #0058e6 0%, #0046b9 100%);
+            color: white; padding: 5px 10px; font-weight: bold; font-size: 13px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .xp-close-btn {
+            background: linear-gradient(to bottom, #e76049 0%, #b82d15 100%);
+            border: 1px solid #7a1607; color: white; font-weight: bold;
+            width: 18px; height: 18px; text-align: center; line-height: 16px;
+            border-radius: 3px; cursor: pointer;
+        }
+        .xp-window-body { padding: 15px; background-color: #222; text-align: center; }
+        canvas { background-color: #000; border: 3px solid #df0000; display: block; margin: 10px auto; }
+
+        /* CASSETTE ERROR POPUPS */
+        .cloned-error {
+            position: absolute; width: 320px; background: #ece9d8;
+            border: 2px solid #0054e3; border-top-left-radius: 5px; border-top-right-radius: 5px;
+            box-shadow: 4px 4px 12px rgba(0,0,0,0.4); z-index: 50;
+        }
+
+        /* BLUE SCREEN OF DEATH */
+        #crashScreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #0000aa; color: white; font-family: monospace;
+            padding: 50px; box-sizing: border-box; display: none; z-index: 100;
+        }
+        .restart-btn {
+            background: #ece9d8; color: black; border: 2px solid #fff;
+            padding: 10px 25px; font-family: 'Tahoma', sans-serif; font-weight: bold;
+            cursor: pointer; margin-top: 30px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .restart-btn:hover { background: #fff; }
+
+        /* BOOT RESTART SCREEN */
+        #bootScreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: black; color: white; display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 200;
+            font-family: 'Tahoma', sans-serif;
+        }
+        .loading-bar {
+            width: 150px; height: 12px; border: 2px solid #666;
+            position: relative; margin-top: 20px; overflow: hidden; background: #000;
+        }
+        .loading-block {
+            position: absolute; width: 30px; height: 100%;
+            background: linear-gradient(to right, #3af, #0054e3);
+            animation: moveBar 1.2s infinite linear;
+        }
+        @keyframes moveBar { 0% { left: -30px; } 100% { left: 150px; } }
+    </style>
+</head>
+<body>
+
+    <div class="desktop-icons">
+        <div class="shortcut" ondblclick="openPacManVirus()">
+            <div class="icon-shape pac-icon"></div>
+            <div class="shortcut-label">PacMan</div>
+        </div>
+        <div class="shortcut" onclick="triggerSystemCrash()">
+            <div class="icon-shape computer-icon"></div>
+            <div class="shortcut-label">My Computer</div>
+        </div>
+        <div class="shortcut" onclick="triggerSystemCrash()">
+            <div class="icon-shape bin-icon"></div>
+            <div class="shortcut-label">Recycle Bin</div>
+        </div>
+    </div>
+
+    <div class="xp-window" id="pacWindow">
+        <div class="xp-title-bar">
+            <span>⚠️ PacManVirus.exe</span>
+            <div class="xp-close-btn" onclick="closeWindowTroll()">✕</div>
+        </div>
+        <div class="xp-window-body">
+            <div style="color: #ffd700; font-size: 16px;">Scor: <span id="scoreDisplay">0</span></div>
+            <canvas id="gameCanvas" width="380" height="380"></canvas>
+        </div>
+    </div>
+
+    <div id="crashScreen">
+        <h2>A problem has been detected and Windows has been shut down to prevent damage.</h2>
+        <p>CRITICAL_SYSTEM_ERROR: UNRESOLVED_EXPLORER_REQUEST</p>
+        <p>The system partition on your hard disk drive could not process My Computer / Recycle Bin requests.</p>
+        <br>
+        <p>Technical Information:</p>
+        <p>*** STOP: 0x000000D1 (0x0000000C, 0x00000002, 0x00000000, 0xF86B5A89)</p>
+        <button class="restart-btn" onclick="startRebootSequence()">Restart Computer</button>
+    </div>
+
+    <div id="bootScreen">
+        <div style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">Microsoft Windows XP</div>
+        <div style="font-size: 12px; color: #777; margin-top: 5px;">Loading hard disk drive...</div>
+        <div class="loading-bar">
+            <div class="loading-block"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("scoreDisplay");
+        const pacWindow = document.getElementById("pacWindow");
+        const crashScreen = document.getElementById("crashScreen");
+        const bootScreen = document.getElementById("bootScreen");
+
+        const tileSize = 20;
+        let score = 0;
+        let gameActive = false;
+
+        const map = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,2,1],
+            [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
+            [1,1,1,1,2,1,1,1,0,1,0,1,1,1,2,1,1,1,1],
+            [0,0,0,1,2,1,0,0,0,0,0,0,0,1,2,1,0,0,0],
+            [1,1,1,1,2,1,0,1,1,0,1,1,0,1,2,1,1,1,1],
+            [0,0,0,0,2,0,0,1,0,0,0,1,0,0,2,0,0,0,0],
+            [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
+            [0,0,0,1,2,1,0,0,0,0,0,0,0,1,2,1,0,0,0],
+            [1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+            [1,2,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,2,1],
+            [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
+            [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        let pacman = { x: 9*tileSize, y: 15*tileSize, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0, speed: 4, radius: 8 };
+        let ghost = { x: 9*tileSize, y: 9*tileSize, dirX: 1, dirY: 0, speed: 3.5 };
+
+        window.addEventListener("keydown", e => {
+            if (!gameActive) return;
+            if (e.key === "ArrowUp")    { pacman.nextDirX = 0;  pacman.nextDirY = -1; }
+            if (e.key === "ArrowDown")  { pacman.nextDirX = 0;  pacman.nextDirY = 1;  }
+            if (e.key === "ArrowLeft")  { pacman.nextDirX = -1; pacman.nextDirY = 0;  }
+            if (e.key === "ArrowRight") { pacman.nextDirX = 1;  pacman.nextDirY = 0;  }
+        });
+
+        function openPacManVirus() {
+            pacWindow.style.display = "block";
+            if (!gameActive) { gameActive = true; loop(); }
+        }
+
+        function closeWindowTroll() {
+            pacWindow.style.top = (Math.random() * 40) + "%";
+            pacWindow.style.left = (Math.random() * 50) + "%";
+        }
+
+        // FUNCTIA DE CRASH SOLICITATA
+        function triggerSystemCrash() {
+            gameActive = false;
+            pacWindow.style.display = "none";
+            
+            let count = 0;
+            let interval = setInterval(() => {
+                let err = document.createElement("div");
+                err.className = "cloned-error";
+                err.style.top = (Math.random() * 65) + "vh";
+                err.style.left = (Math.random() * 65) + "vw";
+                err.innerHTML = `
+                    <div class="xp-title-bar"><span>Critical System Directory Error</span><div>✕</div></div>
+                    <div style="padding:15px; font-size:12px; color:black; background:#fff;">Error 404: Access denied on hard disk sectors.</div>
+                `;
+                document.body.appendChild(err);
+                count++;
+                
+                if (count > 12) {
+                    clearInterval(interval);
+                    setTimeout(() => { crashScreen.style.display = "block"; }, 400);
+                }
+            }, 100);
+        }
+
+        // FUNCTIA DE RESTART SOLICITATA
+        function startRebootSequence() {
+            crashScreen.style.display = "none";
+            document.querySelectorAll('.cloned-error').forEach(el => el.remove());
+            
+            bootScreen.style.display = "flex";
+            
+            setTimeout(() => {
+                bootScreen.style.display = "none";
+                score = 0;
+                scoreDisplay.innerText = score;
+                pacman.x = 9*tileSize; pacman.y = 15*tileSize; pacman.dirX = 0; pacman.dirY = 0;
+                ghost.x = 9*tileSize; ghost.y = 9*tileSize;
+            }, 3000);
+        }
+
+        function checkWallCollision(x, y) {
+            let topTile = Math.floor(y / tileSize); let bottomTile = Math.floor((y + tileSize - 1) / tileSize);
+            let leftTile = Math.floor(x / tileSize); let rightTile = Math.floor((x + tileSize - 1) / tileSize);
+            if (leftTile < 0 || rightTile >= 19 || topTile < 0 || bottomTile >= 19) return false;
+            return map[topTile][leftTile] === 1 || map[topTile][rightTile] === 1 || map[bottomTile][leftTile] === 1 || map[bottomTile][rightTile] === 1;
+        }
+
+        function update() {
+            if (!gameActive) return;
+            if (pacman.x % tileSize === 0 && pacman.y % tileSize === 0) {
+                let testNextX = pacman.x + pacman.nextDirX * pacman.speed;
+                let testNextY = pacman.y + pacman.nextDirY * pacman.speed;
+                if (!checkWallCollision(testNextX, testNextY)) { pacman.dirX = pacman.nextDirX; pacman.dirY = pacman.nextDirY; }
+            }
+            let nextX = pacman.x + pacman.dirX * pacman.speed;
+            let nextY = pacman.y + pacman.dirY * pacman.speed;
+            if (!checkWallCollision(nextX, nextY)) { pacman.x = nextX; pacman.y = nextY; }
+
+            let currentTileX = Math.floor((pacman.x + tileSize/2) / tileSize);
+            let currentTileY = Math.floor((pacman.y + tileSize/2) / tileSize);
+            if (map[currentTileY][currentTileX] === 2) { map[currentTileY][currentTileX] = 0; score += 10; scoreDisplay.innerText = score; }
+
+            if (ghost.x % tileSize === 0 && ghost.y % tileSize === 0) {
+                let directions = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
+                let validDirs = directions.filter(d => !checkWallCollision(ghost.x + d.x*tileSize, ghost.y + d.y*tileSize));
+                if (validDirs.length > 0) { let choice = validDirs[Math.floor(Math.random() * validDirs.length)]; ghost.dirX = choice.x; ghost.dirY = choice.y; }
+            }
+            ghost.x += ghost.dirX * ghost.speed; ghost.y += ghost.dirY * ghost.speed;
+
+            if (Math.hypot((pacman.x - ghost.x), (pacman.y - ghost.y)) < tileSize) {
+                gameActive = false; pacWindow.style.display = "none";
+                triggerSystemCrash();
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let r = 0; r < map.length; r++) {
+                for (let c = 0; c < map[r].length; c++) {
+                    if (map[r][c] === 1) { ctx.fillStyle = "#df0000"; ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize); }
+                    else if (map[r][c] === 2) { ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.arc(c * tileSize + tileSize/2, r * tileSize + tileSize/2, 3, 0, Math.PI * 2); ctx.fill(); }
+                }
+            }
+            ctx.fillStyle = "#00ff00"; ctx.beginPath(); ctx.arc(pacman.x + tileSize/2, pacman.y + tileSize/2, pacman.radius, 0.2 * Math.PI, 1.8 * Math.PI); ctx.lineTo(pacman.x + tileSize/2, pacman.y + tileSize/2); ctx.fill();
+            ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(ghost.x + tileSize/2, ghost.y + tileSize/2, pacman.radius, 0, Math.PI * 2); ctx.fill();
+        }
+
+        function loop() { if (gameActive) { update(); draw(); requestAnimationFrame(loop); } }
+    </script>
+</body>
+</html>
